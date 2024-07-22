@@ -470,6 +470,130 @@ class AdvancedWatermarkEnhancement:
         enhanced = cv2.addWeighted(img, 1, binary, strength, 0)
         return enhanced.astype(np.uint8)
 
+class AdvancedWaveletWatermarkEnhancement:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "image": ("IMAGE",),
+            "wavelet_level": ("INT", {"default": 2, "min": 1, "max": 4, "step": 1}),
+            "detail_enhancement": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1}),
+            "contrast_enhancement": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 3.0, "step": 0.1}),
+            "sharpening_amount": ("FLOAT", {"default": 1.5, "min": 0.0, "max": 3.0, "step": 0.1}),
+        }}
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "enhance_watermark"
+    CATEGORY = "image/watermark"
+
+    def enhance_watermark(self, image, wavelet_level, detail_enhancement, contrast_enhancement, sharpening_amount):
+        result = []
+        for img in image:
+            img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
+            gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+
+            # Apply wavelet transform
+            enhanced = self.wavelet_enhance(gray, wavelet_level, detail_enhancement)
+
+            # Apply contrast enhancement
+            enhanced = self.contrast_enhance(enhanced, contrast_enhancement)
+
+            # Apply sharpening
+            enhanced = self.sharpen(enhanced, sharpening_amount)
+
+            # Apply adaptive thresholding
+            enhanced = self.adaptive_threshold(enhanced)
+
+            enhanced_rgb = np.stack([enhanced] * 3, axis=-1)
+            result.append(torch.from_numpy(enhanced_rgb.astype(np.float32) / 255.0))
+        return (torch.stack(result),)
+
+    def wavelet_enhance(self, img, level, enhancement_factor):
+        coeffs = pywt.wavedec2(img, 'haar', level=level)
+        
+        # Enhance detail coefficients
+        for i in range(1, len(coeffs)):
+            coeffs[i] = tuple(enhancement_factor * detail for detail in coeffs[i])
+        
+        # Reconstruct the image
+        enhanced_img = pywt.waverec2(coeffs, 'haar')
+        return np.clip(enhanced_img, 0, 255).astype(np.uint8)
+
+    def contrast_enhance(self, img, factor):
+        mean = np.mean(img)
+        enhanced = (img - mean) * factor + mean
+        return np.clip(enhanced, 0, 255).astype(np.uint8)
+
+    def sharpen(self, img, amount):
+        blurred = cv2.GaussianBlur(img, (0, 0), 3)
+        sharpened = cv2.addWeighted(img, 1.0 + amount, blurred, -amount, 0)
+        return np.clip(sharpened, 0, 255).astype(np.uint8)
+
+    def adaptive_threshold(self, img):
+        return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+
+class CannyDWTWatermarkEnhancement:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "image": ("IMAGE",),
+            "canny_low_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
+            "canny_high_threshold": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
+            "texture_threshold": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1.0, "step": 0.1}),
+            "dwt_level": ("INT", {"default": 2, "min": 1, "max": 4, "step": 1}),
+            "enhancement_strength": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 5.0, "step": 0.1}),
+        }}
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "enhance_watermark"
+    CATEGORY = "image/watermark"
+
+    def enhance_watermark(self, image, canny_low_threshold, canny_high_threshold, texture_threshold, dwt_level, enhancement_strength):
+        result = []
+        for img in image:
+            img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
+            gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+            
+            # Step 1: Canny Edge Detection
+            edges = cv2.Canny(gray, canny_low_threshold, canny_high_threshold)
+            
+            # Step 2: Texture Block Extraction
+            texture_mask = self.extract_texture_blocks(edges, texture_threshold)
+            
+            # Step 3: DWT on texture blocks
+            enhanced = self.apply_dwt_enhancement(gray, texture_mask, dwt_level, enhancement_strength)
+            
+            # Combine with original image
+            enhanced_color = cv2.cvtColor(enhanced, cv2.COLOR_GRAY2RGB)
+            result_img = cv2.addWeighted(img_np, 0.7, enhanced_color, 0.3, 0)
+            
+            result.append(torch.from_numpy(result_img.astype(np.float32) / 255.0))
+        return (torch.stack(result),)
+
+    def extract_texture_blocks(self, edges, threshold):
+        block_size = 8
+        h, w = edges.shape
+        texture_mask = np.zeros_like(edges)
+        
+        for i in range(0, h, block_size):
+            for j in range(0, w, block_size):
+                block = edges[i:i+block_size, j:j+block_size]
+                if np.mean(block) > threshold * 255:
+                    texture_mask[i:i+block_size, j:j+block_size] = 1
+        
+        return texture_mask
+
+    def apply_dwt_enhancement(self, img, mask, level, strength):
+        coeffs = pywt.wavedec2(img, 'haar', level=level)
+        
+        for i in range(1, len(coeffs)):
+            for j in range(3):
+                coeffs[i][j] = coeffs[i][j] * mask * strength
+        
+        enhanced = pywt.waverec2(coeffs, 'haar')
+        return np.clip(enhanced, 0, 255).astype(np.uint8)
+
+
+
 NODE_CLASS_MAPPINGS = {
     "CLAHEEnhancement": CLAHEEnhancement,
     "HighPassFilter": HighPassFilter,
@@ -483,7 +607,9 @@ NODE_CLASS_MAPPINGS = {
     "FlexibleCombineEnhancements": FlexibleCombineEnhancements,
     "ComprehensiveImageEnhancement": ComprehensiveImageEnhancement,
     "WatermarkEnhancement": WatermarkEnhancement,
-    "AdvancedWatermarkEnhancement": AdvancedWatermarkEnhancement
+    "AdvancedWatermarkEnhancement": AdvancedWatermarkEnhancement,
+    "AdvancedWaveletWatermarkEnhancement": AdvancedWaveletWatermarkEnhancement,
+    "CannyDWTWatermarkEnhancement": CannyDWTWatermarkEnhancement
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -499,5 +625,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "FlexibleCombineEnhancements": "Flexible Combine Enhancements",
     "ComprehensiveImageEnhancement": "Comprehensive Image Enhancement",
     "WatermarkEnhancement": "Watermark Enhancement",
-    "AdvancedWatermarkEnhancement": "Advanced Watermark Enhancement"
+    "AdvancedWatermarkEnhancement": "Advanced Watermark Enhancement",
+    "AdvancedWaveletWatermarkEnhancement": "Advanced Wavelet Watermark Enhancement",
+    "CannyDWTWatermarkEnhancement": "Canny DWT Watermark Enhancement"
 }
