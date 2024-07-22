@@ -276,6 +276,88 @@ class FlexibleCombineEnhancements:
             result.append(torch.clamp(combined, 0, 1))
         return (torch.stack(result),)
 
+class ComprehensiveImageEnhancement:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                # CLAHE Enhancement
+                "clahe_clip_limit": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                "clahe_grid_size": ("INT", {"default": 8, "min": 2, "max": 16, "step": 1}),
+                # High Pass Filter
+                "hpf_cutoff_freq": ("FLOAT", {"default": 30.0, "min": 1.0, "max": 100.0, "step": 1.0}),
+                # Edge Detection
+                "edge_low_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
+                "edge_high_threshold": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
+                # Adaptive Thresholding
+                "at_block_size": ("INT", {"default": 11, "min": 3, "max": 99, "step": 2}),
+                "at_c": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 10.0, "step": 0.5}),
+                # Morphological Operations
+                "morph_operation": (["dilate", "erode", "open", "close"],),
+                "morph_kernel_size": ("INT", {"default": 3, "min": 1, "max": 21, "step": 2}),
+                # Improved Gray Color Enhancement
+                "gray_lower": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
+                "gray_upper": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
+                "gray_boost_factor": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 5.0, "step": 0.1}),
+                "gray_sharpen_amount": ("FLOAT", {"default": 1.5, "min": 0.0, "max": 5.0, "step": 0.1}),
+                # Texture Enhancement
+                "texture_freq_range": ("FLOAT", {"default": 30.0, "min": 1.0, "max": 100.0, "step": 1.0}),
+                "texture_boost_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1}),
+                # Denoising Filter
+                "denoise_strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1}),
+                "denoise_color_strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1}),
+                # Weights for combining
+                "weight_clahe": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_hpf": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_edge": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_at": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_morph": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_gray": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_texture": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_denoise": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+            }
+        }
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "enhance"
+    CATEGORY = "image/watermark"
+
+    def enhance(self, image, **kwargs):
+        clahe = CLAHEEnhancement()
+        hpf = HighPassFilter()
+        edge = EdgeDetection()
+        at = AdaptiveThresholding()
+        morph = MorphologicalOperations()
+        gray = ImprovedGrayColorEnhancement()
+        texture = TextureEnhancement()
+        denoise = DenoisingFilter()
+        
+        enhanced_clahe = clahe.enhance(image, kwargs['clahe_clip_limit'], kwargs['clahe_grid_size'])[0]
+        enhanced_hpf = hpf.filter(image, kwargs['hpf_cutoff_freq'])[0]
+        enhanced_edge = edge.detect(image, kwargs['edge_low_threshold'], kwargs['edge_high_threshold'])[0]
+        enhanced_at = at.threshold(image, kwargs['at_block_size'], kwargs['at_c'])[0]
+        enhanced_morph = morph.morph(image, kwargs['morph_operation'], kwargs['morph_kernel_size'])[0]
+        enhanced_gray = gray.enhance_gray(image, kwargs['gray_lower'], kwargs['gray_upper'], 
+                                          kwargs['gray_boost_factor'], kwargs['gray_sharpen_amount'])[0]
+        enhanced_texture = texture.enhance_texture(image, kwargs['texture_freq_range'], kwargs['texture_boost_factor'])[0]
+        enhanced_denoise = denoise.denoise(image, kwargs['denoise_strength'], kwargs['denoise_color_strength'])[0]
+        
+        result = []
+        for imgs in zip(image, enhanced_clahe, enhanced_hpf, enhanced_edge, enhanced_at, 
+                        enhanced_morph, enhanced_gray, enhanced_texture, enhanced_denoise):
+            original = imgs[0]
+            enhancements = imgs[1:]
+            weights = [kwargs[f'weight_{name}'] for name in ['clahe', 'hpf', 'edge', 'at', 'morph', 'gray', 'texture', 'denoise']]
+            
+            combined = original * (1 - sum(weights))
+            for enhanced, weight in zip(enhancements, weights):
+                combined += enhanced * weight
+            
+            result.append(torch.clamp(combined, 0, 1))
+        
+        return (torch.stack(result),)
+
 NODE_CLASS_MAPPINGS = {
     "CLAHEEnhancement": CLAHEEnhancement,
     "HighPassFilter": HighPassFilter,
@@ -286,7 +368,8 @@ NODE_CLASS_MAPPINGS = {
     "ImprovedGrayColorEnhancement": ImprovedGrayColorEnhancement,
     "TextureEnhancement": TextureEnhancement,
     "DenoisingFilter": DenoisingFilter,
-    "FlexibleCombineEnhancements": FlexibleCombineEnhancements
+    "FlexibleCombineEnhancements": FlexibleCombineEnhancements,
+    "ComprehensiveImageEnhancement": ComprehensiveImageEnhancement
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -299,5 +382,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ImprovedGrayColorEnhancement": "Improved Gray Color Enhancement",
     "TextureEnhancement": "Texture Enhancement",
     "DenoisingFilter": "Denoising Filter",
-    "FlexibleCombineEnhancements": "Flexible Combine Enhancements"
+    "FlexibleCombineEnhancements": "Flexible Combine Enhancements",
+    "ComprehensiveImageEnhancement": "Comprehensive Image Enhancement"
 }
