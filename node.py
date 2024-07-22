@@ -283,39 +283,39 @@ class ComprehensiveImageEnhancement:
             "required": {
                 "image": ("IMAGE",),
                 # CLAHE Enhancement
-                "clahe_clip_limit": ("FLOAT", {"default": 3.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                "clahe_clip_limit": ("FLOAT", {"default": 4.0, "min": 0.1, "max": 10.0, "step": 0.1}),
                 "clahe_grid_size": ("INT", {"default": 8, "min": 2, "max": 16, "step": 1}),
                 # High Pass Filter
-                "hpf_cutoff_freq": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1}),
+                "hpf_cutoff_freq": ("INT", {"default": 80, "min": 1, "max": 100, "step": 1}),
                 # Edge Detection
-                "edge_low_threshold": ("INT", {"default": 50, "min": 0, "max": 255, "step": 1}),
-                "edge_high_threshold": ("INT", {"default": 150, "min": 0, "max": 255, "step": 1}),
+                "edge_low_threshold": ("INT", {"default": 30, "min": 0, "max": 255, "step": 1}),
+                "edge_high_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
                 # Adaptive Thresholding
-                "at_block_size": ("INT", {"default": 15, "min": 3, "max": 99, "step": 2}),
-                "at_c": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 10.0, "step": 0.5}),
+                "at_block_size": ("INT", {"default": 11, "min": 3, "max": 99, "step": 2}),
+                "at_c": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 10.0, "step": 0.5}),
                 # Morphological Operations
                 "morph_operation": (["dilate", "erode", "open", "close"],),
-                "morph_kernel_size": ("INT", {"default": 5, "min": 1, "max": 21, "step": 2}),
+                "morph_kernel_size": ("INT", {"default": 3, "min": 1, "max": 21, "step": 2}),
                 # Improved Gray Color Enhancement
-                "gray_lower": ("INT", {"default": 80, "min": 0, "max": 255, "step": 1}),
-                "gray_upper": ("INT", {"default": 220, "min": 0, "max": 255, "step": 1}),
-                "gray_boost_factor": ("FLOAT", {"default": 1.8, "min": 1.0, "max": 5.0, "step": 0.1}),
-                "gray_sharpen_amount": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 5.0, "step": 0.1}),
+                "gray_lower": ("INT", {"default": 50, "min": 0, "max": 255, "step": 1}),
+                "gray_upper": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
+                "gray_boost_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1}),
+                "gray_sharpen_amount": ("FLOAT", {"default": 2.5, "min": 0.0, "max": 5.0, "step": 0.1}),
                 # Texture Enhancement
-                "texture_freq_range": ("INT", {"default": 40, "min": 1, "max": 100, "step": 1}),
-                "texture_boost_factor": ("FLOAT", {"default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1}),
+                "texture_freq_range": ("INT", {"default": 70, "min": 1, "max": 100, "step": 1}),
+                "texture_boost_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 5.0, "step": 0.1}),
                 # Denoising Filter
-                "denoise_strength": ("FLOAT", {"default": 8, "min": 0, "max": 20, "step": 0.1}),
-                "denoise_color_strength": ("FLOAT", {"default": 8, "min": 0, "max": 20, "step": 0.1}),
+                "denoise_strength": ("FLOAT", {"default": 5, "min": 0, "max": 20, "step": 0.1}),
+                "denoise_color_strength": ("FLOAT", {"default": 5, "min": 0, "max": 20, "step": 0.1}),
                 # Weights for combining
-                "weight_clahe": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_hpf": ("FLOAT", {"default": 0.15, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_edge": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_clahe": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_hpf": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_edge": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "weight_at": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "weight_morph": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "weight_gray": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_texture": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_denoise": ("FLOAT", {"default": 0.15, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_texture": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_denoise": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
             }
         }
     
@@ -358,6 +358,40 @@ class ComprehensiveImageEnhancement:
         
         return (torch.stack(result),)
 
+class WatermarkEnhancement:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {"image": ("IMAGE",),
+                             "contrast_factor": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 3.0, "step": 0.1}),
+                             "sharpness_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1})}}
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "enhance_watermark"
+    CATEGORY = "image/watermark"
+
+    def enhance_watermark(self, image, contrast_factor, sharpness_factor):
+        result = []
+        for img in image:
+            img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
+            
+            # Increase contrast
+            lab = cv2.cvtColor(img_np, cv2.COLOR_RGB2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+            cl = clahe.apply(l)
+            limg = cv2.merge((cl,a,b))
+            enhanced = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+            
+            # Apply sharpening
+            blurred = cv2.GaussianBlur(enhanced, (0, 0), 3)
+            enhanced = cv2.addWeighted(enhanced, sharpness_factor, blurred, 1-sharpness_factor, 0)
+            
+            # Adjust contrast
+            enhanced = cv2.convertScaleAbs(enhanced, alpha=contrast_factor, beta=0)
+            
+            result.append(torch.from_numpy(enhanced.astype(np.float32) / 255.0))
+        return (torch.stack(result),)
+
 NODE_CLASS_MAPPINGS = {
     "CLAHEEnhancement": CLAHEEnhancement,
     "HighPassFilter": HighPassFilter,
@@ -369,7 +403,8 @@ NODE_CLASS_MAPPINGS = {
     "TextureEnhancement": TextureEnhancement,
     "DenoisingFilter": DenoisingFilter,
     "FlexibleCombineEnhancements": FlexibleCombineEnhancements,
-    "ComprehensiveImageEnhancement": ComprehensiveImageEnhancement
+    "ComprehensiveImageEnhancement": ComprehensiveImageEnhancement,
+    "WatermarkEnhancement": WatermarkEnhancement
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -383,5 +418,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "TextureEnhancement": "Texture Enhancement",
     "DenoisingFilter": "Denoising Filter",
     "FlexibleCombineEnhancements": "Flexible Combine Enhancements",
-    "ComprehensiveImageEnhancement": "Comprehensive Image Enhancement"
+    "ComprehensiveImageEnhancement": "Comprehensive Image Enhancement",
+    "WatermarkEnhancement": "Watermark Enhancement"
 }
