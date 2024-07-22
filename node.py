@@ -8,7 +8,7 @@ class CLAHEEnhancement:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",), 
-                             "clip_limit": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                             "clip_limit": ("FLOAT", {"default": 3.0, "min": 0.1, "max": 10.0, "step": 0.1}),
                              "grid_size": ("INT", {"default": 8, "min": 2, "max": 16, "step": 1})}}
     
     RETURN_TYPES = ("IMAGE",)
@@ -32,7 +32,7 @@ class HighPassFilter:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",), 
-                             "cutoff_freq": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1})}}
+                             "cutoff_freq": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "filter"
@@ -61,8 +61,8 @@ class EdgeDetection:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",), 
-                             "low_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
-                             "high_threshold": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1})}}
+                             "low_threshold": ("INT", {"default": 50, "min": 0, "max": 255, "step": 1}),
+                             "high_threshold": ("INT", {"default": 150, "min": 0, "max": 255, "step": 1})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "detect"
@@ -104,8 +104,8 @@ class AdaptiveThresholding:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",), 
-                             "block_size": ("INT", {"default": 11, "min": 3, "max": 99, "step": 2}),
-                             "C": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 10.0, "step": 0.5})}}
+                             "block_size": ("INT", {"default": 15, "min": 3, "max": 99, "step": 2}),
+                             "C": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 10.0, "step": 0.5})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "threshold"
@@ -126,7 +126,7 @@ class MorphologicalOperations:
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",), 
                              "operation": (["dilate", "erode", "open", "close"],),
-                             "kernel_size": ("INT", {"default": 3, "min": 1, "max": 21, "step": 2})}}
+                             "kernel_size": ("INT", {"default": 5, "min": 1, "max": 21, "step": 2})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "morph"
@@ -152,10 +152,10 @@ class ImprovedGrayColorEnhancement:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",),
-                             "lower_gray": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
-                             "upper_gray": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
-                             "boost_factor": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 5.0, "step": 0.1}),
-                             "sharpen_amount": ("FLOAT", {"default": 1.5, "min": 0.0, "max": 5.0, "step": 0.1})}}
+                             "lower_gray": ("INT", {"default": 80, "min": 0, "max": 255, "step": 1}),
+                             "upper_gray": ("INT", {"default": 220, "min": 0, "max": 255, "step": 1}),
+                             "boost_factor": ("FLOAT", {"default": 1.8, "min": 1.0, "max": 5.0, "step": 0.1}),
+                             "sharpen_amount": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 5.0, "step": 0.1})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "enhance_gray"
@@ -193,8 +193,8 @@ class TextureEnhancement:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",),
-                             "frequency_range": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1}),
-                             "boost_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1})}}
+                             "frequency_range": ("INT", {"default": 40, "min": 1, "max": 100, "step": 1}),
+                             "boost_factor": ("FLOAT", {"default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "enhance_texture"
@@ -238,8 +238,8 @@ class DenoisingFilter:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",),
-                             "strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1}),
-                             "color_strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1})}}
+                             "strength": ("FLOAT", {"default": 8, "min": 0, "max": 20, "step": 0.1}),
+                             "color_strength": ("FLOAT", {"default": 8, "min": 0, "max": 20, "step": 0.1})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "denoise"
@@ -283,39 +283,39 @@ class ComprehensiveImageEnhancement:
             "required": {
                 "image": ("IMAGE",),
                 # CLAHE Enhancement
-                "clahe_clip_limit": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 10.0, "step": 0.1}),
+                "clahe_clip_limit": ("FLOAT", {"default": 3.0, "min": 0.1, "max": 10.0, "step": 0.1}),
                 "clahe_grid_size": ("INT", {"default": 8, "min": 2, "max": 16, "step": 1}),
                 # High Pass Filter
-                "hpf_cutoff_freq": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1}),
+                "hpf_cutoff_freq": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1}),
                 # Edge Detection
-                "edge_low_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
-                "edge_high_threshold": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
+                "edge_low_threshold": ("INT", {"default": 50, "min": 0, "max": 255, "step": 1}),
+                "edge_high_threshold": ("INT", {"default": 150, "min": 0, "max": 255, "step": 1}),
                 # Adaptive Thresholding
-                "at_block_size": ("INT", {"default": 11, "min": 3, "max": 99, "step": 2}),
-                "at_c": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 10.0, "step": 0.5}),
+                "at_block_size": ("INT", {"default": 15, "min": 3, "max": 99, "step": 2}),
+                "at_c": ("FLOAT", {"default": 3.0, "min": 0.0, "max": 10.0, "step": 0.5}),
                 # Morphological Operations
                 "morph_operation": (["dilate", "erode", "open", "close"],),
-                "morph_kernel_size": ("INT", {"default": 3, "min": 1, "max": 21, "step": 2}),
+                "morph_kernel_size": ("INT", {"default": 5, "min": 1, "max": 21, "step": 2}),
                 # Improved Gray Color Enhancement
-                "gray_lower": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
-                "gray_upper": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
-                "gray_boost_factor": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 5.0, "step": 0.1}),
-                "gray_sharpen_amount": ("FLOAT", {"default": 1.5, "min": 0.0, "max": 5.0, "step": 0.1}),
+                "gray_lower": ("INT", {"default": 80, "min": 0, "max": 255, "step": 1}),
+                "gray_upper": ("INT", {"default": 220, "min": 0, "max": 255, "step": 1}),
+                "gray_boost_factor": ("FLOAT", {"default": 1.8, "min": 1.0, "max": 5.0, "step": 0.1}),
+                "gray_sharpen_amount": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 5.0, "step": 0.1}),
                 # Texture Enhancement
-                "texture_freq_range": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1}),
-                "texture_boost_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1}),
+                "texture_freq_range": ("INT", {"default": 40, "min": 1, "max": 100, "step": 1}),
+                "texture_boost_factor": ("FLOAT", {"default": 2.5, "min": 1.0, "max": 5.0, "step": 0.1}),
                 # Denoising Filter
-                "denoise_strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1}),
-                "denoise_color_strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1}),
+                "denoise_strength": ("FLOAT", {"default": 8, "min": 0, "max": 20, "step": 0.1}),
+                "denoise_color_strength": ("FLOAT", {"default": 8, "min": 0, "max": 20, "step": 0.1}),
                 # Weights for combining
-                "weight_clahe": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_hpf": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_edge": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_at": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_morph": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_gray": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_texture": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "weight_denoise": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_clahe": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_hpf": ("FLOAT", {"default": 0.15, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_edge": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_at": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_morph": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_gray": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_texture": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "weight_denoise": ("FLOAT", {"default": 0.15, "min": 0.0, "max": 1.0, "step": 0.05}),
             }
         }
     
