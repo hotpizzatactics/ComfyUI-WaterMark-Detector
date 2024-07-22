@@ -32,7 +32,7 @@ class HighPassFilter:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",), 
-                             "cutoff_freq": ("FLOAT", {"default": 30.0, "min": 1.0, "max": 100.0, "step": 1.0})}}
+                             "cutoff_freq": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1})}}
     
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "filter"
@@ -286,7 +286,7 @@ class ComprehensiveImageEnhancement:
                 "clahe_clip_limit": ("FLOAT", {"default": 2.0, "min": 0.1, "max": 10.0, "step": 0.1}),
                 "clahe_grid_size": ("INT", {"default": 8, "min": 2, "max": 16, "step": 1}),
                 # High Pass Filter
-                "hpf_cutoff_freq": ("FLOAT", {"default": 30.0, "min": 1.0, "max": 100.0, "step": 1.0}),
+                "hpf_cutoff_freq": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1}),
                 # Edge Detection
                 "edge_low_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
                 "edge_high_threshold": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
