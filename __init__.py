@@ -28,3 +28,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DenoisingFilter": "Denoising Filter",
     "FlexibleCombineEnhancements": "Flexible Combine Enhancements"
 }
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
