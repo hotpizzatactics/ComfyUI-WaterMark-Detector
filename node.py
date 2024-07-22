@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from scipy import ndimage
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
+import pywt
 
 class CLAHEEnhancement:
     @classmethod
@@ -392,6 +393,83 @@ class WatermarkEnhancement:
             result.append(torch.from_numpy(enhanced.astype(np.float32) / 255.0))
         return (torch.stack(result),)
 
+class AdvancedWatermarkEnhancement:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "image": ("IMAGE",),
+            "method": (["fourier", "wavelet", "phase_congruency", "adaptive_threshold"],),
+            "strength": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 5.0, "step": 0.1}),
+        }}
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "enhance_watermark"
+    CATEGORY = "image/watermark"
+
+    def enhance_watermark(self, image, method, strength):
+        result = []
+        for img in image:
+            img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
+            gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+
+            if method == "fourier":
+                enhanced = self.fourier_enhance(gray, strength)
+            elif method == "wavelet":
+                enhanced = self.wavelet_enhance(gray, strength)
+            elif method == "phase_congruency":
+                enhanced = self.phase_congruency_enhance(gray, strength)
+            elif method == "adaptive_threshold":
+                enhanced = self.adaptive_threshold_enhance(gray, strength)
+
+            enhanced_rgb = np.stack([enhanced] * 3, axis=-1)
+            result.append(torch.from_numpy(enhanced_rgb.astype(np.float32) / 255.0))
+        return (torch.stack(result),)
+
+    def fourier_enhance(self, img, strength):
+        f = fft2(img)
+        fshift = fftshift(f)
+        magnitude_spectrum = 20 * np.log(np.abs(fshift))
+        
+        # Enhance high frequencies
+        rows, cols = img.shape
+        crow, ccol = rows // 2, cols // 2
+        fshift[crow-30:crow+30, ccol-30:ccol+30] = 0
+        
+        f_ishift = ifftshift(fshift)
+        img_back = np.abs(ifft2(f_ishift))
+        img_back = (img_back - np.min(img_back)) / (np.max(img_back) - np.min(img_back))
+        return (img_back * 255).astype(np.uint8)
+
+    def wavelet_enhance(self, img, strength):
+        coeffs2 = pywt.dwt2(img, 'bior1.3')
+        LL, (LH, HL, HH) = coeffs2
+        
+        # Enhance high frequency components
+        LH = LH * strength
+        HL = HL * strength
+        HH = HH * strength
+        
+        enhanced_coeffs = LL, (LH, HL, HH)
+        enhanced_img = pywt.idwt2(enhanced_coeffs, 'bior1.3')
+        return np.clip(enhanced_img, 0, 255).astype(np.uint8)
+
+    def phase_congruency_enhance(self, img, strength):
+        # This is a simplified version. For full implementation, consider using the phasepack library
+        sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
+        sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+        magnitude = np.sqrt(sobelx**2 + sobely**2)
+        phase = np.arctan2(sobely, sobelx)
+        
+        enhanced = magnitude * np.cos(phase) * strength
+        return np.clip(enhanced, 0, 255).astype(np.uint8)
+
+    def adaptive_threshold_enhance(self, img, strength):
+        block_size = int(11 + strength * 10)  # Adjust block size based on strength
+        C = strength * 2
+        binary = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, C)
+        enhanced = cv2.addWeighted(img, 1, binary, strength, 0)
+        return enhanced.astype(np.uint8)
+
 NODE_CLASS_MAPPINGS = {
     "CLAHEEnhancement": CLAHEEnhancement,
     "HighPassFilter": HighPassFilter,
@@ -404,7 +482,8 @@ NODE_CLASS_MAPPINGS = {
     "DenoisingFilter": DenoisingFilter,
     "FlexibleCombineEnhancements": FlexibleCombineEnhancements,
     "ComprehensiveImageEnhancement": ComprehensiveImageEnhancement,
-    "WatermarkEnhancement": WatermarkEnhancement
+    "WatermarkEnhancement": WatermarkEnhancement,
+    "AdvancedWatermarkEnhancement": AdvancedWatermarkEnhancement
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -419,5 +498,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DenoisingFilter": "Denoising Filter",
     "FlexibleCombineEnhancements": "Flexible Combine Enhancements",
     "ComprehensiveImageEnhancement": "Comprehensive Image Enhancement",
-    "WatermarkEnhancement": "Watermark Enhancement"
+    "WatermarkEnhancement": "Watermark Enhancement",
+    "AdvancedWatermarkEnhancement": "Advanced Watermark Enhancement"
 }
