@@ -193,7 +193,7 @@ class TextureEnhancement:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"image": ("IMAGE",),
-                             "frequency_range": ("FLOAT", {"default": 30.0, "min": 1.0, "max": 100.0, "step": 1.0}),
+                             "frequency_range": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1}),
                              "boost_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1})}}
     
     RETURN_TYPES = ("IMAGE",)
@@ -302,7 +302,7 @@ class ComprehensiveImageEnhancement:
                 "gray_boost_factor": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 5.0, "step": 0.1}),
                 "gray_sharpen_amount": ("FLOAT", {"default": 1.5, "min": 0.0, "max": 5.0, "step": 0.1}),
                 # Texture Enhancement
-                "texture_freq_range": ("FLOAT", {"default": 30.0, "min": 1.0, "max": 100.0, "step": 1.0}),
+                "texture_freq_range": ("INT", {"default": 30, "min": 1, "max": 100, "step": 1}),
                 "texture_boost_factor": ("FLOAT", {"default": 2.0, "min": 1.0, "max": 5.0, "step": 0.1}),
                 # Denoising Filter
                 "denoise_strength": ("FLOAT", {"default": 10, "min": 0, "max": 20, "step": 0.1}),
