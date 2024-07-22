@@ -592,6 +592,68 @@ class CannyDWTWatermarkEnhancement:
         enhanced = pywt.waverec2(coeffs, 'haar')
         return np.clip(enhanced, 0, 255).astype(np.uint8)
 
+import torch
+import numpy as np
+import cv2
+
+class ColorLevelWatermarkEnhancement:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "image": ("IMAGE",),
+            "red_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+            "red_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
+            "green_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+            "green_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
+            "blue_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+            "blue_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
+            "output_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
+            "output_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
+            "gamma": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 5.0, "step": 0.1}),
+        }}
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "enhance_watermark"
+    CATEGORY = "image/watermark"
+
+    def enhance_watermark(self, image, red_low, red_high, green_low, green_high, blue_low, blue_high, output_low, output_high, gamma):
+        result = []
+        for img in image:
+            img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
+            
+            # Split the image into color channels
+            b, g, r = cv2.split(img_np)
+            
+            # Adjust levels for each channel
+            r = self.adjust_levels(r, red_low, red_high, output_low, output_high, gamma)
+            g = self.adjust_levels(g, green_low, green_high, output_low, output_high, gamma)
+            b = self.adjust_levels(b, blue_low, blue_high, output_low, output_high, gamma)
+            
+            # Merge the channels back
+            enhanced = cv2.merge([b, g, r])
+            
+            result.append(torch.from_numpy(enhanced.astype(np.float32) / 255.0))
+        return (torch.stack(result),)
+
+    def adjust_levels(self, channel, in_low, in_high, out_low, out_high, gamma):
+        # Clip the input ranges
+        channel = np.clip(channel, in_low, in_high)
+        
+        # Normalize the channel
+        channel = (channel - in_low) / (in_high - in_low)
+        
+        # Apply gamma correction
+        channel = np.power(channel, gamma)
+        
+        # Scale to output range
+        channel = channel * (out_high - out_low) + out_low
+        
+        return np.clip(channel, 0, 255).astype(np.uint8)
+
+# Add this to your NODE_CLASS_MAPPINGS
+NODE_CLASS_MAPPINGS = {
+    
+}
 
 
 NODE_CLASS_MAPPINGS = {
@@ -609,7 +671,8 @@ NODE_CLASS_MAPPINGS = {
     "WatermarkEnhancement": WatermarkEnhancement,
     "AdvancedWatermarkEnhancement": AdvancedWatermarkEnhancement,
     "AdvancedWaveletWatermarkEnhancement": AdvancedWaveletWatermarkEnhancement,
-    "CannyDWTWatermarkEnhancement": CannyDWTWatermarkEnhancement
+    "CannyDWTWatermarkEnhancement": CannyDWTWatermarkEnhancement,
+    "ColorLevelWatermarkEnhancement": ColorLevelWatermarkEnhancement
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -627,5 +690,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "WatermarkEnhancement": "Watermark Enhancement",
     "AdvancedWatermarkEnhancement": "Advanced Watermark Enhancement",
     "AdvancedWaveletWatermarkEnhancement": "Advanced Wavelet Watermark Enhancement",
-    "CannyDWTWatermarkEnhancement": "Canny DWT Watermark Enhancement"
+    "CannyDWTWatermarkEnhancement": "Canny DWT Watermark Enhancement",
+    "ColorLevelWatermarkEnhancement": "Color Level Watermark Enhancement"
 }
