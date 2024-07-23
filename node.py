@@ -621,5 +621,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "AdvancedWaveletWatermarkEnhancement": "Advanced Wavelet Watermark Enhancement",
 }
 
-# The mappings do match each other. Each key in NODE_CLASS_MAPPINGS corresponds to a key in NODE_DISPLAY_NAME_MAPPINGS,
-# and the display names are appropriate human-readable versions of the class names.
+__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
