@@ -531,130 +531,61 @@ class AdvancedWaveletWatermarkEnhancement:
     def adaptive_threshold(self, img):
         return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 
-class CannyDWTWatermarkEnhancement:
+
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
             "image": ("IMAGE",),
-            "canny_low_threshold": ("INT", {"default": 100, "min": 0, "max": 255, "step": 1}),
-            "canny_high_threshold": ("INT", {"default": 200, "min": 0, "max": 255, "step": 1}),
-            "texture_threshold": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1.0, "step": 0.1}),
-            "dwt_level": ("INT", {"default": 2, "min": 1, "max": 4, "step": 1}),
-            "enhancement_strength": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 5.0, "step": 0.1}),
+            "threshold_method": (["otsu", "adaptive", "manual"],),
+            "manual_threshold": ("INT", {"default": 127, "min": 0, "max": 255, "step": 1}),
+            "block_size": ("INT", {"default": 11, "min": 3, "max": 99, "step": 2}),
+            "constant": ("INT", {"default": 2, "min": -10, "max": 10, "step": 1}),
+            "denoise_iterations": ("INT", {"default": 2, "min": 0, "max": 10, "step": 1}),
+            "edge_enhance": ("BOOLEAN", {"default": True}),
         }}
     
     RETURN_TYPES = ("IMAGE",)
-    FUNCTION = "enhance_watermark"
+    FUNCTION = "detect_watermark"
     CATEGORY = "image/watermark"
 
-    def enhance_watermark(self, image, canny_low_threshold, canny_high_threshold, texture_threshold, dwt_level, enhancement_strength):
+    def detect_watermark(self, image, threshold_method, manual_threshold, block_size, constant, denoise_iterations, edge_enhance):
         result = []
         for img in image:
             img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
             gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
             
-            # Step 1: Canny Edge Detection
-            edges = cv2.Canny(gray, canny_low_threshold, canny_high_threshold)
+            # Apply thresholding
+            if threshold_method == "otsu":
+                _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            elif threshold_method == "adaptive":
+                binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                               cv2.THRESH_BINARY, block_size, constant)
+            else:  # manual
+                _, binary = cv2.threshold(gray, manual_threshold, 255, cv2.THRESH_BINARY)
             
-            # Step 2: Texture Block Extraction
-            texture_mask = self.extract_texture_blocks(edges, texture_threshold)
+            # Denoise
+            if denoise_iterations > 0:
+                binary = self.denoise_binary(binary, denoise_iterations)
             
-            # Step 3: DWT on texture blocks
-            enhanced = self.apply_dwt_enhancement(gray, texture_mask, dwt_level, enhancement_strength)
+            # Edge enhancement
+            if edge_enhance:
+                binary = self.enhance_edges(binary)
             
-            # Combine with original image
-            enhanced_color = cv2.cvtColor(enhanced, cv2.COLOR_GRAY2RGB)
-            result_img = cv2.addWeighted(img_np, 0.7, enhanced_color, 0.3, 0)
-            
-            result.append(torch.from_numpy(result_img.astype(np.float32) / 255.0))
+            # Convert back to RGB for consistency
+            binary_rgb = cv2.cvtColor(binary, cv2.COLOR_GRAY2RGB)
+            result.append(torch.from_numpy(binary_rgb.astype(np.float32) / 255.0))
+        
         return (torch.stack(result),)
 
-    def extract_texture_blocks(self, edges, threshold):
-        block_size = 8
-        h, w = edges.shape
-        texture_mask = np.zeros_like(edges)
-        
-        for i in range(0, h, block_size):
-            for j in range(0, w, block_size):
-                block = edges[i:i+block_size, j:j+block_size]
-                if np.mean(block) > threshold * 255:
-                    texture_mask[i:i+block_size, j:j+block_size] = 1
-        
-        return texture_mask
+    def denoise_binary(self, binary, iterations):
+        kernel = np.ones((3,3), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=iterations)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=iterations)
+        return binary
 
-    def apply_dwt_enhancement(self, img, mask, level, strength):
-        coeffs = pywt.wavedec2(img, 'haar', level=level)
-        
-        for i in range(1, len(coeffs)):
-            for j in range(3):
-                coeffs[i][j] = coeffs[i][j] * mask * strength
-        
-        enhanced = pywt.waverec2(coeffs, 'haar')
-        return np.clip(enhanced, 0, 255).astype(np.uint8)
-
-import torch
-import numpy as np
-import cv2
-
-class ColorLevelWatermarkEnhancement:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required": {
-            "image": ("IMAGE",),
-            "red_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
-            "red_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
-            "green_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
-            "green_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
-            "blue_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
-            "blue_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
-            "output_low": ("INT", {"default": 0, "min": 0, "max": 255, "step": 1}),
-            "output_high": ("INT", {"default": 255, "min": 0, "max": 255, "step": 1}),
-            "gamma": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 5.0, "step": 0.1}),
-        }}
-    
-    RETURN_TYPES = ("IMAGE",)
-    FUNCTION = "enhance_watermark"
-    CATEGORY = "image/watermark"
-
-    def enhance_watermark(self, image, red_low, red_high, green_low, green_high, blue_low, blue_high, output_low, output_high, gamma):
-        result = []
-        for img in image:
-            img_np = np.clip(255. * img.cpu().numpy(), 0, 255).astype(np.uint8)
-            
-            # Split the image into color channels
-            b, g, r = cv2.split(img_np)
-            
-            # Adjust levels for each channel
-            r = self.adjust_levels(r, red_low, red_high, output_low, output_high, gamma)
-            g = self.adjust_levels(g, green_low, green_high, output_low, output_high, gamma)
-            b = self.adjust_levels(b, blue_low, blue_high, output_low, output_high, gamma)
-            
-            # Merge the channels back
-            enhanced = cv2.merge([b, g, r])
-            
-            result.append(torch.from_numpy(enhanced.astype(np.float32) / 255.0))
-        return (torch.stack(result),)
-
-    def adjust_levels(self, channel, in_low, in_high, out_low, out_high, gamma):
-        # Clip the input ranges
-        channel = np.clip(channel, in_low, in_high)
-        
-        # Normalize the channel
-        channel = (channel - in_low) / (in_high - in_low)
-        
-        # Apply gamma correction
-        channel = np.power(channel, gamma)
-        
-        # Scale to output range
-        channel = channel * (out_high - out_low) + out_low
-        
-        return np.clip(channel, 0, 255).astype(np.uint8)
-
-# Add this to your NODE_CLASS_MAPPINGS
-NODE_CLASS_MAPPINGS = {
-    
-}
-
+    def enhance_edges(self, binary):
+        edges = cv2.Canny(binary, 100, 200)
+        return cv2.addWeighted(binary, 1, edges, 0.5, 0)
 
 NODE_CLASS_MAPPINGS = {
     "CLAHEEnhancement": CLAHEEnhancement,
@@ -671,8 +602,6 @@ NODE_CLASS_MAPPINGS = {
     "WatermarkEnhancement": WatermarkEnhancement,
     "AdvancedWatermarkEnhancement": AdvancedWatermarkEnhancement,
     "AdvancedWaveletWatermarkEnhancement": AdvancedWaveletWatermarkEnhancement,
-    "CannyDWTWatermarkEnhancement": CannyDWTWatermarkEnhancement,
-    "ColorLevelWatermarkEnhancement": ColorLevelWatermarkEnhancement
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -690,6 +619,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "WatermarkEnhancement": "Watermark Enhancement",
     "AdvancedWatermarkEnhancement": "Advanced Watermark Enhancement",
     "AdvancedWaveletWatermarkEnhancement": "Advanced Wavelet Watermark Enhancement",
-    "CannyDWTWatermarkEnhancement": "Canny DWT Watermark Enhancement",
-    "ColorLevelWatermarkEnhancement": "Color Level Watermark Enhancement"
 }
+
+# The mappings do match each other. Each key in NODE_CLASS_MAPPINGS corresponds to a key in NODE_DISPLAY_NAME_MAPPINGS,
+# and the display names are appropriate human-readable versions of the class names.
